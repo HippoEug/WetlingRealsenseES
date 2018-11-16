@@ -2,7 +2,7 @@
 
 #include "imguifunctions.hpp"
 
-void ImGuiFunctions::menuGUI(bool& show_color_camera, bool& show_depth_camera, bool& camera_button, bool& coordinates_button, bool& CSV_button) {
+void ImGuiFunctions::menuGUI(bool& show_color_camera, bool& show_depth_camera, bool& camera_button_png, bool& camera_button_rosbag, bool& convert_bag_button, bool& coordinates_button) {
 	static const int flags = ImGuiWindowFlags_NoCollapse
 		| ImGuiWindowFlags_NoScrollbar
 		| ImGuiWindowFlags_NoSavedSettings
@@ -22,18 +22,20 @@ void ImGuiFunctions::menuGUI(bool& show_color_camera, bool& show_depth_camera, b
 	ImGui::Text("--------SAVE--------");
 	ImGui::Separator();
 	if (ImGui::Button("Capture Image", { 150, 25 })) {
-		camera_button = true;
+		camera_button_png = true;
+	}
+	if (ImGui::Button("Capture Rosbag", { 150, 25 })) {
+		camera_button_rosbag = true;
 	}
 
 	ImGui::Separator();
 	ImGui::Text("---MSC' FUNCTIONS---");
 	ImGui::Separator();
+	if (ImGui::Button("Convert ROSBAG", { 150, 25 })) {
+		convert_bag_button = true;
+	}
 	if (ImGui::Button("Select Coordinates", { 150, 25 })) {
 		coordinates_button = true;
-	}
-
-	if (ImGui::Button("Save XYZ Coordinates", { 150, 25 })) {
-		CSV_button = true;
 	}
 	//ImGui::Checkbox("ROSBAG", &CSV_button);
 

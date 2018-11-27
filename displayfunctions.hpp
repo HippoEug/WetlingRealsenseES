@@ -292,6 +292,7 @@ public:
 		// Front buffer is the one being displayed, while the back buffer is the one being rendered
 		// When the entire frame has been rendered, it is time to swap the back and the front buffers,
 		// in order to display what has been rendered and begin rendering a new frame
+		glfwMakeContextCurrent(win); //19112018
 		glfwSwapBuffers(win); // Swap front and back buffers
 		glfwSwapInterval(1); // VSync, FPS Limit: 60
 
@@ -303,6 +304,7 @@ public:
 		glfwGetFramebufferSize(win, &_width, &_height); // For directly retrieving the current size of the framebuffer of aindow
 
 														// Clear the framebuffer
+		glClearColor(0.95f, 0.95f, 0.95f, 1.00f); // Background color
 		glClear(GL_COLOR_BUFFER_BIT); // Render here
 		glViewport(0, 0, _width, _height);
 

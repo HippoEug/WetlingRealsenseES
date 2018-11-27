@@ -18,6 +18,11 @@
 #include "converter.hpp"
 #include "converter-csv.hpp"
 #include "converter-png.hpp"
+#include "csvmanager.hpp" // Uncomment this, not documented in Report/Github yet
+
+static void glfw_error_callback(int error, const char* description) {
+	fprintf(stderr, "GLFW Error %d: %s\n", error, description);
+}
 
 int main(int argc, char* argv[]) {
 	// OpenGL + GLFW + ImGui Declarations
@@ -41,7 +46,7 @@ int main(int argc, char* argv[]) {
 
 	rs2::config standardConfig;
 	standardConfig.enable_stream(RS2_STREAM_COLOR, -1, 1280, 720, rs2_format::RS2_FORMAT_RGB8, 0);
-	standardConfig.enable_stream(RS2_STREAM_DEPTH, -1, 1280, 720, rs2_format::RS2_FORMAT_ANY, 0);
+	standardConfig.enable_stream(RS2_STREAM_DEPTH, -1, 1280, 720, rs2_format::RS2_FORMAT_Z16, 0);
 
 	rs2::config recordConfig;
 	recordConfig.enable_record_to_file("record.bag");
@@ -49,9 +54,12 @@ int main(int argc, char* argv[]) {
 	recordConfig.enable_stream(RS2_STREAM_DEPTH, -1, 1280, 720, rs2_format::RS2_FORMAT_ANY, 0);
 
 	// File management Declarations
-	std::ofstream csvDataFile;
-	csvDataFile.open("csvDataFile.csv");
 	std::string fileName, bagName;
+
+	std::ifstream importVerticesFile;
+
+	std::ofstream randomTestFile;
+	randomTestFile.open("randomTestFile.csv");
 
 	// ImGui state Declarations
 	bool show_color_camera = false; // Stream Color
@@ -60,12 +68,24 @@ int main(int argc, char* argv[]) {
 	bool camera_button_rosbag = false; // Capture 1s ROSBAG TODO
 	bool convert_bag_button = false; // Generate CSV File with ROSBAG TODO
 	bool coordinates_button = false; // Select Coordinates in a PNG
+	bool import_csv_button = false;
+
+	bool rosbag_menu_display_done = false;
+
+	char buf1[64] = "Test Display";
 
 	pipe->start(standardConfig); // Start Realsense pipeline
 
 	while (window) {
 		ImGui_ImplGlfw_NewFrame(1);
 		ImGuiFunctions::menuGUI(show_color_camera, show_depth_camera, camera_button_png, camera_button_rosbag, convert_bag_button, coordinates_button);
+
+		// START EDIT 27112018
+		//ImGui::Begin("Rosbag Converter");
+		//ImGui::Text("Enter .bag File Name: ");
+		//ImGui::InputText("default", buf1, 64);
+		//ImGui::End();
+		// END EDIT 27112018
 
 		if (show_color_camera == true || show_depth_camera == true) {
 			data = pipe->wait_for_frames().apply_filter(holeFilter);
@@ -117,59 +137,65 @@ int main(int argc, char* argv[]) {
 		}
 
 		if (convert_bag_button) {
-			//std::cout << "Enter File Name: ";
-			//std::cin >> fileName;
-			//std::cout << "Enter Bag Name: ";
-			//std::cin >> bagName;
+			//std::cout << "WAT" << std::endl;
+			ImGuiFunctions::rosbagGUI(rosbag_menu_display_done, buf1);
 
-			//convertToCSV.push_back(std::make_shared<rs2::tools::converter::converter_csv>(fileName));
-			//convertToPNG.push_back(std::make_shared < rs2::tools::converter::converter_png>(fileName));
-			//convertConfig.enable_device_from_file(bagName);
+			if (rosbag_menu_display_done) {
+				//std::cout << "Enter File Name: ";
+				//std::cin >> fileName;
+				//std::cout << "Enter Bag Name: ";
+				//std::cin >> bagName;
 
-			convertToCSV.push_back(std::make_shared<rs2::tools::converter::converter_csv>("convert"));
-			convertToPNG.push_back(std::make_shared < rs2::tools::converter::converter_png>("convert"));
-			convertConfig.enable_device_from_file("record.bag");
+				//convertToCSV.push_back(std::make_shared<rs2::tools::converter::converter_csv>(fileName));
+				//convertToPNG.push_back(std::make_shared < rs2::tools::converter::converter_png>(fileName));
+				//convertConfig.enable_device_from_file(bagName);
 
-			pipe->stop();
-			pipe->start(convertConfig);
-			auto device = pipe->get_active_profile().get_device();
-			rs2::playback playback = device.as<rs2::playback>();
-			playback.set_real_time(false);
-			auto duration = playback.get_duration();
-			int progress = 0;
-			int frameNumber = 0ULL;
+				convertToCSV.push_back(std::make_shared<rs2::tools::converter::converter_csv>("realsense"));
+				convertToPNG.push_back(std::make_shared < rs2::tools::converter::converter_png>("realsense"));
+				convertConfig.enable_device_from_file("record.bag");
 
-			while (true) {
-				auto frameset_c = pipe->wait_for_frames();
+				pipe->stop();
+				pipe->start(convertConfig);
+				auto device = pipe->get_active_profile().get_device();
+				rs2::playback playback = device.as<rs2::playback>();
+				playback.set_real_time(false);
+				auto duration = playback.get_duration();
+				int progress = 0;
+				int frameNumber = 0ULL;
 
-				if (frameset_c[0].get_frame_number() == 5 || frameset_c[0].get_frame_number() == 6 || frameset_c[0].get_frame_number() == 7) { // If end of frame, bag loops again, hence get_frame_number resets to 1 and is smaller
-					std::for_each(convertToCSV.begin(), convertToCSV.end(), [&frameset_c](std::shared_ptr<rs2::tools::converter::converter_base>& converter) {
-						converter->convert(frameset_c);
-					});
-					std::cout << "\nCONVERTING CSV" << std::endl;
-					std::for_each(convertToCSV.begin(), convertToCSV.end(), [](std::shared_ptr<rs2::tools::converter::converter_base>& converter) {
-						converter->wait();
-					});
-					std::cout << "CONVERTING PICTURES" << std::endl;
-					std::for_each(convertToPNG.begin(), convertToPNG.end(), [&frameset_c](std::shared_ptr<rs2::tools::converter::converter_base>& converter) {
-						converter->convert(frameset_c);
-					});
-					std::for_each(convertToPNG.begin(), convertToPNG.end(), [](std::shared_ptr<rs2::tools::converter::converter_base>& converter) {
-						converter->wait();
-					});
-					break;
+				while (true) {
+					auto frameset_c = pipe->wait_for_frames();
+
+					if (frameset_c[0].get_frame_number() == 5 || frameset_c[0].get_frame_number() == 6 || frameset_c[0].get_frame_number() == 7) { // If end of frame, bag loops again, hence get_frame_number resets to 1 and is smaller
+						std::for_each(convertToCSV.begin(), convertToCSV.end(), [&frameset_c](std::shared_ptr<rs2::tools::converter::converter_base>& converter) {
+							converter->convert(frameset_c);
+						});
+						std::cout << "\nCONVERTING CSV" << std::endl;
+						std::for_each(convertToCSV.begin(), convertToCSV.end(), [](std::shared_ptr<rs2::tools::converter::converter_base>& converter) {
+							converter->wait();
+						});
+						std::cout << "CONVERTING PICTURES" << std::endl;
+						std::for_each(convertToPNG.begin(), convertToPNG.end(), [&frameset_c](std::shared_ptr<rs2::tools::converter::converter_base>& converter) {
+							converter->convert(frameset_c);
+						});
+						std::for_each(convertToPNG.begin(), convertToPNG.end(), [](std::shared_ptr<rs2::tools::converter::converter_base>& converter) {
+							converter->wait();
+						});
+						break;
+					}
+
+					frameNumber = frameset_c[0].get_frame_number();
 				}
 
-				frameNumber = frameset_c[0].get_frame_number();
+				std::cout << "\nDONE!" << std::endl << std::endl;
+
+				pipe->stop();
+				std::cout << "HERE" << std::endl;
+				pipe->start(standardConfig);
+
+				rosbag_menu_display_done = false;
+				convert_bag_button = false;
 			}
-
-			std::cout << "\nDONE!" << std::endl << std::endl;
-
-			pipe->stop();
-			std::cout << "HERE" << std::endl;
-			pipe->start(standardConfig);
-			
-			convert_bag_button = false;
 		}
 
 		if (coordinates_button) {
@@ -177,5 +203,36 @@ int main(int argc, char* argv[]) {
 
 			coordinates_button = false;
 		}
+
+		if (import_csv_button) {
+			char eater;
+			int xs, ys;
+			Array2D<double, 1280, 720> vertices;
+
+			importVerticesFile.open("realsense_Depth_5.csv");
+			std::cout << "COPYING FROM CSV FILE" << std::endl;
+			for (int y{}; y < 720; ++y) {
+				for (int x{}; x < 1280; ++x) {
+					if (!(importVerticesFile >> vertices(x, y) >> std::noskipws >> eater >> std::skipws) && !importVerticesFile.eof() && eater != ',' && eater != '\n') {
+						std::cerr << "Format error at " << x + 1 << '/' << y + 1 << " :(\n\n";
+						return EXIT_FAILURE;
+					}
+				}
+			}
+			std::cout << "DONE" << std::endl;
+
+			for (int a{}; a < 5; a++) {
+				std::cout << "Enter X val: ";
+				std::cin >> xs;
+				std::cout << "Enter Y val: ";
+				std::cin >> ys;
+
+				std::cout << "Value = " << vertices(xs - 1, ys - 1) << std::endl << std::endl;
+			}
+
+			import_csv_button = false;
+		}
+
+		ImGui::Render();
 	}
 }

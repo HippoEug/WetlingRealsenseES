@@ -1,5 +1,7 @@
 #include "imgui\imgui.h"
 
+#include "imgui\imgui_impl_glfw.h"
+
 #include "imguifunctions.hpp"
 
 void ImGuiFunctions::menuGUI(bool& show_color_camera, bool& show_depth_camera, bool& camera_button_png, bool& camera_button_rosbag, bool& convert_bag_button, bool& coordinates_button) {
@@ -44,11 +46,16 @@ void ImGuiFunctions::menuGUI(bool& show_color_camera, bool& show_depth_camera, b
 	ImGui::Separator();
 	ImGui::Text("Copyright 2018, HippoEug. All Rights Reserved");
 	ImGui::End();
-	ImGui::Render();
 }
 
-void ImGuiFunctions::rosbagGUI() {
-	//ImGui::Begin("Wtf");
-	//ImGui::End();
-	//ImGui::Render();
+void ImGuiFunctions::rosbagGUI(bool& rosbag_menu_display_donechar, char buf1[64]) {
+	ImGui::Begin("Rosbag Converter");
+	ImGui::Text("Enter .bag File Name: ");
+	ImGui::InputText("default", buf1, 64);
+
+	if (ImGui::Button("DONE")) {
+		rosbag_menu_display_donechar = true;
+	}
+
+	ImGui::End();
 }

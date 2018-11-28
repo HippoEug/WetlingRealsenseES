@@ -8,6 +8,10 @@
 #include "imgui\imgui.h"
 #include "imgui\imgui_impl_glfw.h"
 
+static void glfw_error_callback(int error, const char* description) {
+	fprintf(stderr, "GLFW Error %d: %s\n", error, description);
+}
+
 // Basic Data Types, where Struct behaves like a Class except members and base classes are public by default
 struct float3_rs {
 	float x, y, z;

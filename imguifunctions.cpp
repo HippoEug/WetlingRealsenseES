@@ -1,5 +1,8 @@
-#include "imgui\imgui.h"
+#include <chrono>
+#include <ctime>
+#include <string>
 
+#include "imgui\imgui.h"
 #include "imgui\imgui_impl_glfw.h"
 
 #include "imguifunctions.hpp"
@@ -39,19 +42,23 @@ void ImGuiFunctions::menuGUI(bool& show_color_camera, bool& show_depth_camera, b
 	if (ImGui::Button("Select Coordinates", { 150, 25 })) {
 		coordinates_button = true;
 	}
-	//ImGui::Checkbox("ROSBAG", &CSV_button);
 
 	ImGui::Separator();
 	ImGui::Text("Frame Rate: %.1f FPS", ImGui::GetIO().Framerate);
-	ImGui::Separator();
+	std::chrono::system_clock::time_point p = std::chrono::system_clock::now();
+	std::time_t t = std::chrono::system_clock::to_time_t(p);
+	ImGui::Text(ctime(&t));
 	ImGui::Text("Copyright 2018, HippoEug. All Rights Reserved");
+	ImGui::Separator();
 	ImGui::End();
 }
 
-void ImGuiFunctions::rosbagGUI(bool& rosbag_menu_display_donechar, char buf1[64]) {
+void ImGuiFunctions::rosbagGUI(bool& rosbag_menu_display_donechar, char bagFileBuffer[64], char newFileBuffer[64]) {
 	ImGui::Begin("Rosbag Converter");
-	ImGui::Text("Enter .bag File Name: ");
-	ImGui::InputText("default", buf1, 64);
+	ImGui::Text("Enter the .bag File Name: ");
+	ImGui::InputText("", bagFileBuffer, 64);
+	ImGui::Text("Enter File Name to Save: ");
+	ImGui::InputText(" ", newFileBuffer, 64);
 
 	if (ImGui::Button("DONE")) {
 		rosbag_menu_display_donechar = true;

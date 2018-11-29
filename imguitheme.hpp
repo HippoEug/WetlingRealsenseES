@@ -8,7 +8,7 @@ namespace imguithemes {
 		ImGuiIO& io = ImGui::GetIO();
 		io.Fonts->Clear();
 
-		ImFont* font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 18.0f);
+		ImFont* font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 19.0f);
 		font->DisplayOffset.y -= 1;
 
 		ImGuiStyle* style = &ImGui::GetStyle();
@@ -23,10 +23,6 @@ namespace imguithemes {
 
 		style->WindowRounding = 0.0f;
 		style->FrameRounding = 0.0f;
-
-		//style->WindowBorderSize = 0.0f;
-		//style->FrameBorderSize = 1.0f;
-		//style->PopupBorderSize = 1.0f;
 
 		style->ScrollbarSize = 20.0f;
 		style->ScrollbarRounding = 0.0f;
@@ -48,7 +44,6 @@ namespace imguithemes {
 
 		style->Colors[ImGuiCol_Text] = text;
 		style->Colors[ImGuiCol_WindowBg] = background;
-		//style->Colors[ImGuiCol_ChildBg] = background;
 		style->Colors[ImGuiCol_PopupBg] = white;
 
 		style->Colors[ImGuiCol_Border] = border;

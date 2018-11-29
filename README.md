@@ -1,7 +1,7 @@
 # WetlingRealsenseES
 
 ## Application Preview
-![image](https://user-images.githubusercontent.com/21957042/49127406-21f52c00-f302-11e8-8d7f-c8f0a9fddab4.png)
+![image](https://user-images.githubusercontent.com/21957042/49209140-acb65380-f3f4-11e8-92a2-5fd1b3859b1f.png)
 
 ## Documentation
 Official Realsense C++ Documentation: https://intelrealsense.github.io/librealsense/doxygen/annotated.html

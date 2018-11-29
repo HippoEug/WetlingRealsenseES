@@ -24,7 +24,7 @@
 int main(int argc, char* argv[]) {
 	// OpenGL + GLFW + ImGui Declarations
 	window_rs window; // Create window object from Class window_rs
-	window.onCreate(1280, 720, "WetlingRealsenseES V2.3"); // Creates a 1280x720 OpenGL window
+	window.onCreate(1280, 720, "WetlingRealsenseES V2.4"); // Creates a 1280x720 OpenGL window
 	ImGui_ImplGlfw_Init(window, true); // Initalize ImGui
 	imguithemes::windowsTheme();
 
@@ -39,9 +39,12 @@ int main(int argc, char* argv[]) {
 	std::vector<std::shared_ptr<rs2::tools::converter::converter_base>> convertToPNG;
 	auto pipe = std::make_shared<rs2::pipeline>();
 
+	// Realsense Camera State Management
+	bool isCameraOn = false;
+	bool turnCameraOnRequest = false;
+
 	// Realsense Pipeline Configurations
 	rs2::config convertConfig;
-	//convertConfig.enable_device_from_file("record.bag");
 
 	rs2::config standardConfig;
 	standardConfig.enable_stream(RS2_STREAM_COLOR, -1, 1280, 720, rs2_format::RS2_FORMAT_RGB8, 0);
@@ -56,7 +59,7 @@ int main(int argc, char* argv[]) {
 	std::string fileName, bagName;
 	std::ifstream importVerticesFile;
 	std::ofstream randomTestFile;
-	randomTestFile.open("randomTestFile.csv");
+	randomTestFile.open("randomTestFile.csv"); // Not used at the moment, can be used to write data in the future
 
 	// ImGui state Declarations
 	bool show_color_camera = false; // Stream Color
@@ -66,19 +69,32 @@ int main(int argc, char* argv[]) {
 	bool convert_bag_button = false; // Generate CSV File with ROSBAG TODO
 	bool coordinates_button = false; // Select Coordinates in a PNG
 	bool import_csv_button = false;
+
 	bool rosbag_menu_display_done = false;
+	bool csv_menu_display_done = false;
+	bool opencv_menu_display_done = false;
 
 	// ImGui Display Variables
-	char bagFileBuffer[64] = "1";
-	char newFileBuffer[64] = "2";
-
-	pipe->start(standardConfig); // Start Realsense pipeline
+	char bagFileBuffer[64] = "";
+	char newFileBuffer[64] = "";
+	char csvFileBuffer[64] = "";
+	char opencvFileBuffer[64] = "";
 
 	while (window) {
 		ImGui_ImplGlfw_NewFrame(1);
-		ImGuiFunctions::menuGUI(show_color_camera, show_depth_camera, camera_button_png, camera_button_rosbag, convert_bag_button, coordinates_button);
+		ImGuiFunctions::menuGUI(show_color_camera, show_depth_camera, camera_button_png, camera_button_rosbag, convert_bag_button, coordinates_button, import_csv_button);
 
 		if (show_color_camera == true || show_depth_camera == true) {
+			turnCameraOnRequest = true;
+
+			if (isCameraOn == true && turnCameraOnRequest == true) { // If camera needs to be on, and is already on, do nothing
+				// Do nothing
+			}
+			else if (isCameraOn == false && turnCameraOnRequest == true) {
+				pipe->start(standardConfig);
+				isCameraOn = true;
+			}
+
 			data = pipe->wait_for_frames().apply_filter(holeFilter);
 			color = data.get_color_frame();
 			depth = color_map.process(data.get_depth_frame());
@@ -91,8 +107,24 @@ int main(int argc, char* argv[]) {
 				depthPreview.render(depth, { 640, 360, window.width() / 2, window.height() / 2 });
 			}
 		}
+		else {
+			turnCameraOnRequest = false;
+		}
 
 		if (camera_button_png) {
+			turnCameraOnRequest = true;
+
+			if (isCameraOn == true && turnCameraOnRequest == true) { // If camera needs to be on, and is already on, do nothing
+				// Do nothing
+			}
+			else if (isCameraOn == false && turnCameraOnRequest == true) {
+				pipe->start(standardConfig);
+				isCameraOn = true;
+			}
+			else if (isCameraOn == true && turnCameraOnRequest == false) {
+				pipe->stop();
+			}
+
 			for (auto i = 0; i < 10; ++i) { // Capture 10 frames for camera hardware to settle
 				pipe->wait_for_frames();
 			}
@@ -111,11 +143,24 @@ int main(int argc, char* argv[]) {
 					std::cout << "Saved " << png_file.str() << std::endl;
 				}
 			}
-
+			turnCameraOnRequest = false;
 			camera_button_png = false;
 		}
 
 		if (camera_button_rosbag) {
+			turnCameraOnRequest = true;
+
+			if (isCameraOn == true && turnCameraOnRequest == true) { // If camera needs to be on, and is already on, do nothing
+				// Do nothing
+			}
+			else if (isCameraOn == false && turnCameraOnRequest == true) {
+				pipe->start(standardConfig);
+				isCameraOn = true;
+			}
+			else if (isCameraOn == true && turnCameraOnRequest == false) {
+				pipe->stop();
+			}
+
 			pipe->stop();
 			pipe->start(recordConfig);
 
@@ -124,10 +169,11 @@ int main(int argc, char* argv[]) {
 			pipe->stop(); // Stop the pipeline that holds the file and the recorder
 			pipe->start(standardConfig); // Resume streaming with default configuration
 
+			turnCameraOnRequest = false;
 			camera_button_rosbag = false;
 		}
 
-		if (convert_bag_button) {
+		if (convert_bag_button) { // TODO: Fix Realsense Pipeline
 			ImGuiFunctions::rosbagGUI(rosbag_menu_display_done, bagFileBuffer, newFileBuffer);
 
 			if (rosbag_menu_display_done) {
@@ -135,7 +181,10 @@ int main(int argc, char* argv[]) {
 				convertToPNG.push_back(std::make_shared < rs2::tools::converter::converter_png>(newFileBuffer));
 				convertConfig.enable_device_from_file(bagFileBuffer);
 
-				pipe->stop();
+				if (isCameraOn) {
+					pipe->stop();
+					isCameraOn = false;
+				}
 				pipe->start(convertConfig);
 				auto device = pipe->get_active_profile().get_device();
 				rs2::playback playback = device.as<rs2::playback>();
@@ -172,7 +221,7 @@ int main(int argc, char* argv[]) {
 
 				pipe->stop();
 				std::cout << "HERE" << std::endl;
-				pipe->start(standardConfig);
+				//pipe->start(standardConfig);
 
 				rosbag_menu_display_done = false;
 				convert_bag_button = false;
@@ -180,9 +229,14 @@ int main(int argc, char* argv[]) {
 		}
 
 		if (coordinates_button) {
-			selectCoordinates();
+			ImGuiFunctions::opencvGUI(opencv_menu_display_done, opencvFileBuffer);
 
-			coordinates_button = false;
+			if (opencv_menu_display_done) {
+				selectCoordinates(opencvFileBuffer);
+
+				opencv_menu_display_done = false;
+				coordinates_button = false;
+			}
 		}
 
 		if (import_csv_button) {
@@ -190,30 +244,40 @@ int main(int argc, char* argv[]) {
 			int xs, ys;
 			Array2D<double, 1280, 720> vertices;
 
-			importVerticesFile.open("realsense_Depth_5.csv");
-			std::cout << "COPYING FROM CSV FILE" << std::endl;
-			for (int y{}; y < 720; ++y) {
-				for (int x{}; x < 1280; ++x) {
-					if (!(importVerticesFile >> vertices(x, y) >> std::noskipws >> eater >> std::skipws) && !importVerticesFile.eof() && eater != ',' && eater != '\n') {
-						std::cerr << "Format error at " << x + 1 << '/' << y + 1 << " :(\n\n";
-						return EXIT_FAILURE;
+			ImGuiFunctions::csvGUI(csv_menu_display_done, csvFileBuffer);
+
+			if (csv_menu_display_done) {
+				importVerticesFile.open(csvFileBuffer);
+				std::cout << "COPYING FROM CSV FILE" << std::endl;
+				for (int y{}; y < 720; ++y) {
+					for (int x{}; x < 1280; ++x) {
+						if (!(importVerticesFile >> vertices(x, y) >> std::noskipws >> eater >> std::skipws) && !importVerticesFile.eof() && eater != ',' && eater != '\n') {
+							std::cerr << "Format error at " << x + 1 << '/' << y + 1 << " :(\n\n";
+							return EXIT_FAILURE;
+						}
 					}
 				}
+				std::cout << "DONE" << std::endl;
+
+				for (int a{}; a < 5; a++) {
+					std::cout << "Enter X val: ";
+					std::cin >> xs;
+					std::cout << "Enter Y val: ";
+					std::cin >> ys;
+
+					std::cout << "Value = " << vertices(xs - 1, ys - 1) << std::endl << std::endl;
+				}
+
+				csv_menu_display_done = false;
+				import_csv_button = false;
 			}
-			std::cout << "DONE" << std::endl;
-
-			for (int a{}; a < 5; a++) {
-				std::cout << "Enter X val: ";
-				std::cin >> xs;
-				std::cout << "Enter Y val: ";
-				std::cin >> ys;
-
-				std::cout << "Value = " << vertices(xs - 1, ys - 1) << std::endl << std::endl;
-			}
-
-			import_csv_button = false;
 		}
 
-		ImGui::Render();
+		if (isCameraOn == true && turnCameraOnRequest == false) {
+			pipe->stop();
+			isCameraOn = false;
+		}
+
+		ImGui::Render(); // Render ImGui at the end of every loop
 	}
 }

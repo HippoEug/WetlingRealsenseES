@@ -1,24 +1,24 @@
 #include <opencv2/opencv.hpp>
 #include "opencvfunctions.hpp"
 
-void selectCoordinates() {
+void selectCoordinates(char opencvFileBuffer[64]) {
 	cv::Mat rgbImage;
-	rgbImage = cv::imread("capture-Color.png"); // Open Image
+	rgbImage = cv::imread(opencvFileBuffer); // Open Image
 
 	if (rgbImage.empty()) {
 		std::cout << "Error: Image Not Found!" << std::endl << std::endl;
-		cv::waitKey(3);
+		return;
 	}
-
-	cv::namedWindow("Points Selection", CV_WINDOW_AUTOSIZE); // Fixed-size window, matching resolution of image
+	else {
+		cv::namedWindow("Points Selection", CV_WINDOW_AUTOSIZE); // Fixed-size window, matching resolution of image
 															 //cv::namedWindow("Points Selection", CV_WINDOW_NORMAL); // Allows resizing of window
-	setMouseCallback("Points Selection", onMouse, &rgbImage); // Pass ptr to mat here
-	cv::imshow("Points Selection", rgbImage);
+		setMouseCallback("Points Selection", onMouse, &rgbImage); // Pass ptr to mat here
+		cv::imshow("Points Selection", rgbImage);
 
-	cv::waitKey(0); // Hold window open until user presses a key
+		cv::waitKey(0); // Hold window open until user presses a key
 
-	cv::destroyAllWindows();
-
+		cv::destroyAllWindows();
+	}
 }
 
 static void onMouse(int event, int x, int y, int, void* imgptr) {

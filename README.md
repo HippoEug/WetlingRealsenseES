@@ -39,3 +39,14 @@ Official Realsense C++ Documentation: https://intelrealsense.github.io/librealse
 1. Select Project and click "Properties" from the context menu
 2. Go to Configuration Properties > C/C++ > Preprocessor
 3. Add ;_CRT_SECURE_NO_WARNINGS in the ProprocessorDefinitions field
+
+## GUI Progression
+![1](https://user-images.githubusercontent.com/21957042/49271286-e5fbcb80-f4a7-11e8-8096-f938aaba84fa.png)
+
+![2](https://user-images.githubusercontent.com/21957042/49271290-e85e2580-f4a7-11e8-9590-21949dfd1683.png)
+
+![3](https://user-images.githubusercontent.com/21957042/49271294-ea27e900-f4a7-11e8-8e9e-177ba37e288b.png)
+
+![4](https://user-images.githubusercontent.com/21957042/49271298-ec8a4300-f4a7-11e8-9a76-292c7ed3ab8f.png)
+
+![5](https://user-images.githubusercontent.com/21957042/49271301-ee540680-f4a7-11e8-9796-bed18984862b.png)

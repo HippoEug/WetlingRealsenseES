@@ -5,11 +5,10 @@
 
 namespace imguithemes {
 	void windowsTheme() {
-		ImGuiIO& io = ImGui::GetIO();
-		io.Fonts->Clear();
-
-		ImFont* font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 19.0f);
-		font->DisplayOffset.y -= 1;
+		/*
+		ImGUIIO& io = ImGui::GetIO();
+		io.Fonts->AddFontDefault();
+		*/
 
 		ImGuiStyle* style = &ImGui::GetStyle();
 		int hspacing = 8;

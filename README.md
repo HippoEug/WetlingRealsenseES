@@ -2,7 +2,6 @@
 
 ## Application Preview
 ![5](https://user-images.githubusercontent.com/21957042/49271301-ee540680-f4a7-11e8-9796-bed18984862b.png)
-![image](https://user-images.githubusercontent.com/21957042/49209140-acb65380-f3f4-11e8-92a2-5fd1b3859b1f.png)
 
 ## Documentation
 Official Realsense C++ Documentation: https://intelrealsense.github.io/librealsense/doxygen/annotated.html

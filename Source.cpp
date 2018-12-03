@@ -7,10 +7,10 @@
 #include <stdio.h>
 
 #include <librealsense2\rs.hpp>
-#include "imgui\imgui.h"
-#include "imgui\imgui_impl_glfw.h"
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
 #define STB_IMAGE_WRITE_IMPLEMENTATION // Header file for writing PNG files
-#include "realsense\stb_image_write.h"
+#include <stb_image_write.h>
 
 #include "displayfunctions.hpp" // For creating GLFW Window
 #include "imguifunctions.hpp" // For drawing ImGui menus
@@ -24,7 +24,7 @@
 int main(int argc, char* argv[]) {
 	// OpenGL + GLFW + ImGui Declarations
 	window_rs window; // Create window object from Class window_rs
-	window.onCreate(1280, 720, "WetlingRealsenseES V2.4"); // Creates a 1280x720 OpenGL window
+	window.onCreate(1280, 720, "WetlingRealsenseES V2.5"); // Creates a 1280x720 OpenGL window
 	ImGui_ImplGlfw_Init(window, true); // Initalize ImGui with callbacks enabled
 
 	imguithemes::windowsTheme(); // Changing ImGui theme values
@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
 	font_small->DisplayOffset.y -= 1;
 	ImFont* font_large = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 25.0f);
 	font_large->DisplayOffset.y -= 1;
-	
+
 	// Realsense Declarations
 	texture_rs rgbPreview, depthPreview;
 	rs2::frameset data;
@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
 			turnCameraOnRequest = true; // Sets request to turn camera on
 
 			if (isCameraOn == true && turnCameraOnRequest == true) { // If camera needs to be on, and is already on, do nothing
-				std::cout << "Camera Already On!" << std::endl;
+				//std::cout << "Camera Already On!" << std::endl;
 			}
 			else if (isCameraOn == false && turnCameraOnRequest == true) { // If camera needs to be on, but it is not on, start pipeline
 				pipe->start(standardConfig); // Start Realsense pipeline with standard configuration
@@ -123,7 +123,7 @@ int main(int argc, char* argv[]) {
 			turnCameraOnRequest = true; // Sets request to turn camera on
 
 			if (isCameraOn == true && turnCameraOnRequest == true) { // If camera needs to be on, and is already on, do nothing
-				std::cout << "Camera Already On!" << std::endl;
+				//std::cout << "Camera Already On!" << std::endl;
 			}
 			else if (isCameraOn == false && turnCameraOnRequest == true) { // If camera needs to be on, but it is not on, start pipeline
 				pipe->start(standardConfig); // Start Realsense pipeline with standard configuration
@@ -153,26 +153,30 @@ int main(int argc, char* argv[]) {
 		}
 
 		if (camera_button_rosbag) {
+			bool previousCameraOn = isCameraOn;
 			turnCameraOnRequest = true;
 
 			if (isCameraOn == true && turnCameraOnRequest == true) { // If camera needs to be on, and is already on, do nothing
-				// Do nothing
+				pipe->stop();
+				pipe->start(recordConfig);
 			}
 			else if (isCameraOn == false && turnCameraOnRequest == true) {
-				pipe->start(standardConfig);
+				pipe->start(recordConfig);
 				isCameraOn = true;
 			}
-			else if (isCameraOn == true && turnCameraOnRequest == false) {
-				pipe->stop();
-			}
-
-			pipe->stop();
-			pipe->start(recordConfig);
 
 			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
 			pipe->stop(); // Stop the pipeline that holds the file and the recorder
-			pipe->start(standardConfig); // Resume streaming with default configuration
+			std::cout << "Pipe Stopped (ROSBAG)" << std::endl;
+
+			if (previousCameraOn == true) {
+				pipe->start(standardConfig); // Resume streaming with default configuration
+				isCameraOn = true;
+			}
+			else {
+				isCameraOn = false;
+			}
 
 			turnCameraOnRequest = false;
 			camera_button_rosbag = false;
@@ -182,14 +186,18 @@ int main(int argc, char* argv[]) {
 			ImGuiFunctions::rosbagGUI(rosbag_menu_display_done, bagFileBuffer, newFileBuffer); // Creates and displays rosbag menu
 
 			if (rosbag_menu_display_done) {
+				std::cout << "1" << std::endl;
 				convertToCSV.push_back(std::make_shared<rs2::tools::converter::converter_csv>(newFileBuffer));
 				convertToPNG.push_back(std::make_shared < rs2::tools::converter::converter_png>(newFileBuffer));
 				convertConfig.enable_device_from_file(bagFileBuffer);
-
+				
 				if (isCameraOn) {
+					std::cout << "Camera On" << std::endl;
 					pipe->stop();
+					std::cout << "Camera Off" << std::endl;
 					isCameraOn = false;
 				}
+				
 				pipe->start(convertConfig);
 				auto device = pipe->get_active_profile().get_device();
 				rs2::playback playback = device.as<rs2::playback>();
@@ -223,7 +231,6 @@ int main(int argc, char* argv[]) {
 				}
 
 				std::cout << "\nDONE!" << std::endl << std::endl;
-
 				pipe->stop();
 				std::cout << "HERE" << std::endl;
 				//pipe->start(standardConfig);
@@ -237,7 +244,7 @@ int main(int argc, char* argv[]) {
 			ImGuiFunctions::opencvGUI(opencv_menu_display_done, opencvFileBuffer); // Creates and displays OpenCV menu
 
 			if (opencv_menu_display_done) {
-				selectCoordinates(opencvFileBuffer);
+				OpenCVFunctions::selectCoordinates(opencvFileBuffer);
 
 				opencv_menu_display_done = false;
 				coordinates_button = false;
@@ -280,6 +287,7 @@ int main(int argc, char* argv[]) {
 
 		if (isCameraOn == true && turnCameraOnRequest == false) {
 			pipe->stop();
+			std::cout << "Pipe Stopped" << std::endl;
 			isCameraOn = false;
 		}
 

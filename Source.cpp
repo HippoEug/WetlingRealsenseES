@@ -159,6 +159,7 @@ int main(int argc, char* argv[]) {
 			if (isCameraOn == true && turnCameraOnRequest == true) { // If camera needs to be on, and is already on, do nothing
 				pipe->stop();
 				pipe->start(recordConfig);
+				isCameraOn = true;
 			}
 			else if (isCameraOn == false && turnCameraOnRequest == true) {
 				pipe->start(recordConfig);

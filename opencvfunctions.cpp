@@ -1,7 +1,7 @@
 #include <opencv2/opencv.hpp>
 #include "opencvfunctions.hpp"
 
-void selectCoordinates(char opencvFileBuffer[64]) {
+void OpenCVFunctions::selectCoordinates(char opencvFileBuffer[64]) {
 	cv::Mat rgbImage;
 	rgbImage = cv::imread(opencvFileBuffer); // Open Image
 
@@ -21,7 +21,7 @@ void selectCoordinates(char opencvFileBuffer[64]) {
 	}
 }
 
-static void onMouse(int event, int x, int y, int, void* imgptr) {
+static void OpenCVFunctions::onMouse(int event, int x, int y, int, void* imgptr) {
 	using namespace cv;
 
 	if (event != 1) { // draw only on left mouse click

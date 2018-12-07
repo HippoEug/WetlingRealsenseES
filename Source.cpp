@@ -45,13 +45,14 @@ int main(int argc, char* argv[]) {
 	std::vector<std::shared_ptr<rs2::tools::converter::converter_base>> convertToCSV;
 	std::vector<std::shared_ptr<rs2::tools::converter::converter_base>> convertToPNG;
 	auto pipe = std::make_shared<rs2::pipeline>(); // Realsense pipeline declaration
+	rs2::pipeline pipe2;
 
 	// Realsense Camera State Management
 	bool isCameraOn = false; // Bool to check if Camera is on at any given point in time
 	bool turnCameraOnRequest = false; // Bool to set when camera is needed to be on for various functions
 
 	// Realsense Pipeline Configurations
-	rs2::config convertConfig; // Pipeline configuration declaration when converting .bag files
+	//rs2::config convertConfig; // Pipeline configuration declaration when converting .bag files
 
 	rs2::config standardConfig; // Pipeline configuration declaration when performing normal streaming
 	standardConfig.enable_stream(RS2_STREAM_COLOR, -1, 1280, 720, rs2_format::RS2_FORMAT_RGB8, 0);
@@ -60,13 +61,11 @@ int main(int argc, char* argv[]) {
 	rs2::config recordConfig; // Pipeline configuration declaration when performing .bag recording
 	recordConfig.enable_record_to_file("record.bag");
 	recordConfig.enable_stream(RS2_STREAM_COLOR, -1, 1280, 720, rs2_format::RS2_FORMAT_RGB8, 0);
-	recordConfig.enable_stream(RS2_STREAM_DEPTH, -1, 1280, 720, rs2_format::RS2_FORMAT_ANY, 0);
+	recordConfig.enable_stream(RS2_STREAM_DEPTH, -1, 1280, 720, rs2_format::RS2_FORMAT_Z16, 0);
 
 	// File management Declarations
 	std::string fileName, bagName;
 	std::ifstream importVerticesFile;
-	std::ofstream randomTestFile;
-	randomTestFile.open("randomTestFile.csv"); // Not used at the moment, can be used to write data in the future
 
 	// ImGui state Declarations
 	bool show_color_camera = false; // Stream Color
@@ -90,6 +89,9 @@ int main(int argc, char* argv[]) {
 	while (window) { // From window_rs class, calls operator bool() every loop
 		ImGui_ImplGlfw_NewFrame(1);
 		ImGuiFunctions::menuGUI(font_large, font_small, show_color_camera, show_depth_camera, camera_button_png, camera_button_rosbag, convert_bag_button, coordinates_button, import_csv_button); // Creates and displays main menu
+
+		char csvFileBuffer[64] = "TestXResults_Depth_35.csv";
+		import_csv_button = true;
 
 		// Checks if streaming condition is set
 		if (show_color_camera == true || show_depth_camera == true) { // Check if color or depth streaming is enabled
@@ -152,7 +154,7 @@ int main(int argc, char* argv[]) {
 			camera_button_png = false;
 		}
 
-		if (camera_button_rosbag) {
+		if (camera_button_rosbag) { // TODO: Fix bag unindexed error
 			bool previousCameraOn = isCameraOn;
 			turnCameraOnRequest = true;
 
@@ -163,13 +165,15 @@ int main(int argc, char* argv[]) {
 			}
 			else if (isCameraOn == false && turnCameraOnRequest == true) {
 				pipe->start(recordConfig);
+				//pipe2.start(recordConfig);
 				isCameraOn = true;
 			}
 
-			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
+			std::this_thread::sleep_for(std::chrono::milliseconds(1500));
 			pipe->stop(); // Stop the pipeline that holds the file and the recorder
 			std::cout << "Pipe Stopped (ROSBAG)" << std::endl;
+			//pipe.reset();
+			std::cout << "Pipe Reset (ROSBAG)" << std::endl;
 
 			if (previousCameraOn == true) {
 				pipe->start(standardConfig); // Resume streaming with default configuration
@@ -178,39 +182,50 @@ int main(int argc, char* argv[]) {
 			else {
 				isCameraOn = false;
 			}
-
+			
 			turnCameraOnRequest = false;
 			camera_button_rosbag = false;
 		}
 
 		if (convert_bag_button) { // TODO: Fix Realsense Pipeline
-			ImGuiFunctions::rosbagGUI(rosbag_menu_display_done, bagFileBuffer, newFileBuffer); // Creates and displays rosbag menu
+			//ImGuiFunctions::rosbagGUI(rosbag_menu_display_done, bagFileBuffer, newFileBuffer); // Creates and displays rosbag menu
 
-			if (rosbag_menu_display_done) {
-				std::cout << "1" << std::endl;
-				convertToCSV.push_back(std::make_shared<rs2::tools::converter::converter_csv>(newFileBuffer));
-				convertToPNG.push_back(std::make_shared < rs2::tools::converter::converter_png>(newFileBuffer));
-				convertConfig.enable_device_from_file(bagFileBuffer);
-				
+			//if (rosbag_menu_display_done) {
+			if (1) {
+				//convertToCSV.push_back(std::make_shared<rs2::tools::converter::converter_csv>(newFileBuffer));
+				//convertToPNG.push_back(std::make_shared<rs2::tools::converter::converter_png>(newFileBuffer));
+				//convertConfig.enable_device_from_file(bagFileBuffer);
+				rs2::config convertConfig;
+				convertToCSV.push_back(std::make_shared<rs2::tools::converter::converter_csv>("abc"));
+				convertToPNG.push_back(std::make_shared<rs2::tools::converter::converter_png>("abc"));
+				convertConfig.enable_device_from_file("record.bag");
+
 				if (isCameraOn) {
 					std::cout << "Camera On" << std::endl;
 					pipe->stop();
 					std::cout << "Camera Off" << std::endl;
 					isCameraOn = false;
 				}
+				else {
+					std::cout << "Before record config start" << std::endl;
+				}
 				
 				pipe->start(convertConfig);
+				std::cout << "After record config start" << std::endl;
 				auto device = pipe->get_active_profile().get_device();
 				rs2::playback playback = device.as<rs2::playback>();
 				playback.set_real_time(false);
 				auto duration = playback.get_duration();
 				int progress = 0;
 				int frameNumber = 0ULL;
+				std::cout << "After load of shit init" << std::endl;
 
 				while (true) {
+					std::cout << "Waiting for frames" << std::endl;
 					auto frameset_c = pipe->wait_for_frames();
+					std::cout << frameset_c[0].get_frame_number() << std::endl;
 
-					if (frameset_c[0].get_frame_number() == 5 || frameset_c[0].get_frame_number() == 6 || frameset_c[0].get_frame_number() == 7) { // If end of frame, bag loops again, hence get_frame_number resets to 1 and is smaller
+					if (frameset_c[0].get_frame_number() > 5) { // If end of frame, bag loops again, hence get_frame_number resets to 1 and is smaller
 						std::for_each(convertToCSV.begin(), convertToCSV.end(), [&frameset_c](std::shared_ptr<rs2::tools::converter::converter_base>& converter) {
 							converter->convert(frameset_c);
 						});
@@ -257,6 +272,20 @@ int main(int argc, char* argv[]) {
 			int xs, ys;
 			Array2D<double, 1280, 720> vertices;
 
+			int numberOfLines = 0;
+			std::string line;
+
+			char dump;
+			std::string temp;
+
+			std::string a, b;
+
+			std::ifstream interestPointsFile;
+			interestPointsFile.open("interestPointsFile.csv");
+			if (!interestPointsFile.is_open()) {
+				std::cout << "ERROR IN OPENING INTERESTPOINTSFILE.CSV" << std::endl;
+			}
+
 			ImGuiFunctions::csvGUI(csv_menu_display_done, csvFileBuffer);
 
 			if (csv_menu_display_done) {
@@ -272,6 +301,7 @@ int main(int argc, char* argv[]) {
 				}
 				std::cout << "DONE" << std::endl;
 
+				/*
 				for (int a{}; a < 5; a++) {
 					std::cout << "Enter X val: ";
 					std::cin >> xs;
@@ -280,6 +310,33 @@ int main(int argc, char* argv[]) {
 
 					std::cout << "Value = " << vertices(xs - 1, ys - 1) << std::endl << std::endl;
 				}
+				*/
+
+				std::vector<int> xCoords;
+				std::vector<int> yCoords;
+
+				while (interestPointsFile.good()) {
+					std::getline(interestPointsFile, a, ',');
+					std::getline(interestPointsFile, b, '\n');
+
+					xCoords.push_back(std::stoi(a));
+					yCoords.push_back(std::stoi(b));
+					//std::cout << a << " " << b << std::endl;
+					numberOfLines++;
+					std::cout << numberOfLines << std::endl;
+				}
+
+				std::cout << xCoords.at(0) << " " << yCoords.at(0) << std::endl;
+				std::cout << xCoords.at(1) << " " << yCoords.at(1) << std::endl;
+				std::cout << xCoords.at(2) << " " << yCoords.at(2) << std::endl;
+				std::cout << xCoords.at(3) << " " << yCoords.at(3) << std::endl;
+				//std::cout << xCoords[0] << " " << yCoords[0] << std::endl;
+				//std::cout << xCoords[1] << " " << yCoords[1] << std::endl;
+				//std::cout << xCoords[2] << " " << yCoords[2] << std::endl;
+				//std::cout << xCoords[3] << " " << yCoords[3] << std::endl;
+
+				interestPointsFile.close();
+				importVerticesFile.close();
 
 				csv_menu_display_done = false;
 				import_csv_button = false;
@@ -291,7 +348,6 @@ int main(int argc, char* argv[]) {
 			std::cout << "Pipe Stopped" << std::endl;
 			isCameraOn = false;
 		}
-
 		ImGui::Render(); // Render ImGui at the end of every loop
 	}
 }

@@ -6,7 +6,6 @@
 
 #include "converter.hpp"
 
-
 namespace rs2 {
 	namespace tools {
 		namespace converter {
@@ -45,10 +44,13 @@ namespace rs2 {
 								}
 
 								std::stringstream filename;
-								filename << _filePath
-									<< "_" << frame.get_profile().stream_name()
-									<< "_" << frame.get_frame_number()
-									<< ".png";
+								filename << _filePath << "_" << frame.get_profile().stream_name() << ".png";
+
+								// Original Code (17122018)
+								//filename << _filePath
+								//	<< "_" << frame.get_profile().stream_name()
+								//	<< "_" << frame.get_frame_number()
+								//	<< ".png";
 
 								std::string filenameS = filename.str();
 

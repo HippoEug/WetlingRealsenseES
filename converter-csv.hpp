@@ -4,11 +4,9 @@
 #ifndef __RS_CONVERTER_CONVERTER_CSV_H
 #define __RS_CONVERTER_CONVERTER_CSV_H
 
-
 #include <fstream>
 
 #include "converter.hpp"
-
 
 namespace rs2 {
 	namespace tools {
@@ -44,10 +42,13 @@ namespace rs2 {
 								}
 
 								std::stringstream filename;
-								filename << _filePath
-									<< "_" << frame.get_profile().stream_name()
-									<< "_" << frame.get_frame_number()
-									<< ".csv";
+								filename << _filePath << "_" << frame.get_profile().stream_name() << ".csv";
+
+								// Original Code (17122018)
+								//filename << _filePath
+								//	<< "_" << frame.get_profile().stream_name()
+								//	<< "_" << frame.get_frame_number()
+								//	<< ".csv";
 
 								std::string filenameS = filename.str();
 

@@ -50,7 +50,7 @@ void ImGuiFunctions::menuGUI(ImFont* font_large, ImFont* font_small, bool& show_
 	ImGui::Separator();
 	ImGui::PopFont();
 	ImGui::PushFont(font_small);
-	if (ImGui::Button("Convert ROSBAG", { 150, 35 })) {
+	if (ImGui::Button("Convert Rosbag", { 150, 35 })) {
 		convert_bag_button = true;
 	}
 	if (ImGui::Button("Select Coordinates", { 150, 35 })) {
@@ -80,7 +80,7 @@ void ImGuiFunctions::menuGUI(ImFont* font_large, ImFont* font_small, bool& show_
 	std::time_t t = std::chrono::system_clock::to_time_t(p);
 	ImGui::Text(ctime(&t));
 	ImGui::Separator();
-	ImGui::Text("HippoEug, 2018. Version 2.4.1");
+	ImGui::Text("HippoEug, 2018. Version 3.0.0");
 	ImGui::Separator();
 
 	ImGui::End();

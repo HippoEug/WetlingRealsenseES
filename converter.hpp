@@ -12,7 +12,6 @@
 
 #include "librealsense2/rs.hpp"
 
-
 namespace rs2 {
 	namespace tools {
 		namespace converter {
